@@ -1,8 +1,9 @@
+using System;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class RopeSwing : MonoBehaviour
 {
+    public event Action<int> GameOver;
     public Transform[] ropeNodes; // 繩索節點（圓柱或空物件陣列）
     public Indicator indicator;
     public float climbSpeed = 5f;
@@ -15,10 +16,13 @@ public class RopeSwing : MonoBehaviour
     //騰空墜落時間
     public float fallFailTime = 10f;
     public float currentFallTime = 0f;
+    public int Score = 0;
+    public float Distance = 0f;
+    public float StartDistance = 0f;
     private FixedJoint joint;
-
     void Update()
     {
+        StartDistance = transform.position.z;
         if (joint == null)
         {
             // 如果沒有繩索連接，騰空墜落超過一定時間，遊戲失敗
@@ -27,7 +31,7 @@ public class RopeSwing : MonoBehaviour
             if (currentFallTime >= fallFailTime)
             {
                 //遊戲失敗
-                SceneManager.LoadScene(0);
+                GameOver?.Invoke(Score);
             }
         }
         if (joint != null)
@@ -49,15 +53,16 @@ public class RopeSwing : MonoBehaviour
             Vector3 swingForce = new Vector3(0, 0, jumpInput) * swingPower;
             characterRigidbody.AddForce(swingForce, forceMode);
 
-            // 玩家在繩索上，上下移動
-        }
-        // 玩家跳躍
-        if (Input.GetKeyDown(KeyCode.Space) && joint != null)
-        {
-            indicator.trajectoryFrozen = true;
-            ReleaseRope();
-            Jump();
-            ropeGenerator.GenerateRope();
+            // 玩家跳躍
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+
+                indicator.trajectoryFrozen = true;
+                ReleaseRope();
+                Jump();
+                ropeGenerator.GenerateRope();
+            }
+
         }
     }
     void MoveToNode(int targetNodeIndex)
@@ -98,7 +103,7 @@ public class RopeSwing : MonoBehaviour
             // 繩索不能抓自己
             if (rope.ropeNodes == this.ropeNodes)
                 return;
-
+            Score++;
             // 繩索接觸時添加FixedJoint
             if (!gameObject.TryGetComponent(out FixedJoint _))
             {
