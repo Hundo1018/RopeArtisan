@@ -1,4 +1,5 @@
 using System;
+using Unity.Mathematics;
 using UnityEngine;
 
 public class RopeSwing : MonoBehaviour
@@ -16,22 +17,30 @@ public class RopeSwing : MonoBehaviour
     //騰空墜落時間
     public float fallFailTime = 10f;
     public float currentFallTime = 0f;
+    public float lowestGameOverHeight = 0f;
     public int Score = 0;
     public float Distance = 0f;
     public float StartDistance = 0f;
     private FixedJoint joint;
-    void Update()
+    public bool isGameOver = false;
+
+    void Start()
     {
         StartDistance = transform.position.z;
+    }
+    void Update()
+    {
+        Distance = transform.position.z - StartDistance;
         if (joint == null)
         {
             // 如果沒有繩索連接，騰空墜落超過一定時間，遊戲失敗
             //開始計算墜落時間
             currentFallTime += Time.deltaTime;
-            if (currentFallTime >= fallFailTime)
+            if (!isGameOver && currentFallTime >= fallFailTime && transform.position.y < lowestGameOverHeight)
             {
                 //遊戲失敗
-                GameOver?.Invoke(Score);
+                GameOver?.Invoke(Score + (int)math.sqrt(Distance));
+                isGameOver = true;
             }
         }
         if (joint != null)
@@ -103,7 +112,7 @@ public class RopeSwing : MonoBehaviour
             // 繩索不能抓自己
             if (rope.ropeNodes == this.ropeNodes)
                 return;
-            Score++;
+            Score += 10;
             // 繩索接觸時添加FixedJoint
             if (!gameObject.TryGetComponent(out FixedJoint _))
             {
